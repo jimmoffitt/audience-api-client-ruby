@@ -1,0 +1,55 @@
+#Audience API ------------------------
+audience_settings:
+  audience_name: think_snow
+  segment_name: none #If loading User IDs, one Segment will be built based on all imported User IDs.
+
+  inbox: ./inbox   #Where User ID data files go (HPT Tweet files? Search Tweet JSON?, Public API User ID JSON array? Database CSV export?)
+  verbose: false #Over-ridden by command-line option...
+
+  outbox: ./outbox #Audience query results go here.
+  serialize_output: false #Serialze output file names, results.json, results_1.json, etc.
+  add_audience_metadata: true #Inject Audience metadata into results JSON.
+  auto_name_from_file: true
+
+audience_groupings: #Three models per group are supported.
+  gender:
+    group_by:
+      - user.gender
+  country:
+    group_by:
+      - user.location.country
+  interests:
+    group_by:
+      - user.interest
+ country_interest:
+    group_by:
+      - user.location.country
+      - user.interest
+  gender_tvshow:
+    group_by:
+      - user.gender
+      - user.tv.show
+  language:
+    group_by:
+      - user.language
+  country_and_region:
+    group_by:
+       - user.location.country
+       - user.location.region
+  tvshow_country:
+    group_by:
+       - user.tv.show
+       - user.location.country
+  interest_gender:
+      group_by:
+         - user.interest
+         - user.gender
+
+logging:
+  name: audience_app.log
+  log_path: ./log
+  warn_level: info
+  size: 1 #MB
+  keep: 2
+ 
+
