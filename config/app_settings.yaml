@@ -11,7 +11,7 @@ audience_settings:
   add_audience_metadata: true #Inject Audience metadata into results JSON.
   auto_name_from_file: true
 
-audience_groupings: #Three models per group are supported.
+audience_groupings: #Two model levels per group are supported. Up to ten Groupings per audience query.
   gender:
     group_by:
       - user.gender
