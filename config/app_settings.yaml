@@ -3,7 +3,13 @@ audience_settings:
   audience_name: think_snow
   segment_name: none #If loading User IDs, one Segment will be built based on all imported User IDs.
 
+  #If you are building Segments from set of User IDs, this is where we look for those.
   inbox: ./inbox   #Where User ID data files go (HPT Tweet files? Search Tweet JSON?, Public API User ID JSON array? Database CSV export?)
+  
+  #If you are building Segments based on a Twitter account ID, use these:
+  account_id:  17200003 #numeric Twitter account ID
+  segment_build_mode: impressed #Options: collection (default), followed, engaged, impressed, target_audience.
+  
   verbose: false #Over-ridden by command-line option...
 
   outbox: ./outbox #Audience query results go here.
