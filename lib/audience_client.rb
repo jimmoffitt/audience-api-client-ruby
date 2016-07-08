@@ -28,6 +28,8 @@ class AudienceClient
 				 :segment_names, #Usually one name, but can be multiple.
 				 :groupings,
 
+				 :account_id,
+				 :segment_build_mode,
 				 :inbox, #A folder full of Tweet files from Gnip Endpoints.
 				 :user_ids, #An array of IDs we are processing.
 				 :user_request_groups, #An array of User ID arrays (max of MAX_USERS_PER_SEGMENT_UPLOAD).
@@ -50,6 +52,9 @@ class AudienceClient
 	  @groupings = []
 	  @outbox = './output'
 	  @keys = {}
+	  
+	  @account_id = 0
+	  @segment_build_mode = ''
 
 	  @audience_name = 'default_audience'
 	  @segment_names = []
@@ -73,6 +78,9 @@ class AudienceClient
 	  settings = YAML::load_file(file)
 
 	  #Now parse contents and load separate attributes.
+	  
+	  @account_id = settings['audience_settings']['account_id']
+	  @segment_build_mode = settings['audience_settings']['segment_build_mode']
 
 	  @inbox = settings['audience_settings']['inbox'] #Where the Tweets are coming from.
 	  @verbose = settings['audience_settings']['verbose']
@@ -99,7 +107,6 @@ class AudienceClient
 	  end
 
    end
-
 
    # HTTP and OAuth Authentication methods ------------------------------------------------------------------------------
    #TODO: new common class?
@@ -343,6 +350,21 @@ class AudienceClient
 
 	  request = {}
 	  request['name'] = name
+
+	  if %w(followed engaged impressed).include? @segment_build_mode.downcase
+		 user_ids = []
+		 user_ids << @account_id.to_s
+		 request[@segment_build_mode]['user_ids'] = []
+		 request[@segment_build_mode]['user_ids'] = user_ids
+	  end
+	  
+	  if @segment_build_mode.downcase == 'tailored'
+		 tailored_audience_ids = []
+		 tailored_audience_ids << @account_id.to_s
+		 request[@segment_build_mode] = {}
+		 request[@segment_build_mode]['tailored_audience_ids'] = []
+		 request[@segment_build_mode]['tailored_audience_ids'] = tailored_audience_ids
+	  end
 
 	  response = make_post_request(uri_path, request.to_json)
 
