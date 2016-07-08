@@ -43,7 +43,7 @@ The Client's design was driven by some common ['usage patterns'](#example-usage-
   + Manages the creation of Segments with more than 100K users. You can import a collection consisting of millions of users, and this client will manage the multiple 'add user' requests required to build the Segment 100K users per request.
   + When adding Segments to an existing Audience, the Client manages the update process by retrieving the Audience composition of Segments, deleting the Audience, and re-creating the Audience with the updated list of Segments.
 + Provides an option to inject the [Audience metadata](#add-audience-metadata) into query results. This option can help you keep track of what Audiences different results were based on.
-+ If making multiple Audience queries based on different [Audience Grouping](#audience-groupings), the results filenames are serialized.
++ If making multiple Audience queries based on different [Audience Grouping](#audience-groupings), the results' filenames are serialized.
  
 The API Client has four modes:
 
@@ -103,12 +103,12 @@ Three details fundamentally drive the client's execution logic:
         + If files _are not_ provided, the Client will attempt to retrieve the specified Segment.
     + If multiple Segment names are provided the Client performs Segment requests. 
         + If data files _are not provided_, the specified Segments are added to the specified Audience if they are not already associated with the Audience. This mode is essential if you are building an Audience with Segments that are all under the minimum Audience size.
-        + If data files _are provided_, extracted IDs are added to the __first__ Segment specified. The remaining Segments are added to the specified Audience if they are not alreay associated with the Audience.
+        + If data files _are provided_, extracted IDs are added to the __first__ Segment specified. The remaining Segments are added to the specified Audience if they are not already associated with the Audience.
 
 + **Audience name:** 
     + Audience name is specified in app_settings.yaml file and can be overridden with the -n command-line parameter.
     + One Audience name per session is supported.
-    + If Audience name is _not provided_ (set to an empty string, nil, or 'none' [TODO]), no Audience management is done, and the client exits after any Segment management. _If you are not creating or querying Audiences, then you should not specify a Audience name._
+    + If Audience name is _not provided_ (set to an empty string, nil, or 'none' [TODO]), no Audience management is done, and the client exits after any Segment management. _If you are not creating or querying Audiences, then you should not specify an Audience name._
     + If a Audience name _is provided_ the Client performs Audience requests.
         + If the Audience does not exist, it is created with the Segments created or retrieved during Segment management.       
         + Each Segment specified is added to the Audience if it does not already reference the Segment.
@@ -158,7 +158,7 @@ Finished at 2016-01-28 12:17:35 -0700
 You may find yourself in a mode when you need to construct several Segments based on different collections of User IDs. When in this mode, an ID collection (a set of data files) is dropped into the inbox, the Segment name is provided, and the client executed as above. The data files are moved out of the inbox into a 'processed' subfolder. Then a fresh set of data files are dropped into the inbox, a fresh Segment name is specfied, and the client re-executed. To help automate the process remember you can pass in the Segment name via the command-line (which overrides any name specified in the configuration file), as in ```$ruby audience_app.rb -s my_second_segment```  
 
 Notes:
-    In the above example, while no configuration files are specified when running the client app, by default it looks for them in a ./config directory. The default file names are app_settings.yaml and accounts.yaml. If you want you can specified your custom locations and names with command-line parameters:  ```$ruby audience_app.rb -a ./config/private/my_account.yaml -c ./config/shared/app_settings.yaml```       
+    In the above example, while no configuration files are specified when running the client app, by default it looks for them in a ./config directory. The default file names are app_settings.yaml and accounts.yaml. If you want, you can specify your custom locations and names with command-line parameters:  ```$ruby audience_app.rb -a ./config/private/my_account.yaml -c ./config/shared/app_settings.yaml```       
 
 + **Having a collection of User IDs, building a Segment and an Audience, and querying that Audience in one sequence.**
  
@@ -202,7 +202,7 @@ Finished at 2016-01-28 12:24:07 -0700
 
 The Audience name can also be passed in via the command-line with the -n parameter. Remember, the command-line parameter overrides any name it finds in the app_settings.yaml configuration file. 
 
-Note that to run the client in this mode, where a single Segment is used to create an Audience, the Segment must have at least the minimum amount of User IDs required to create an Audience (currently the minimum of 500). If you attempt to build an Audience with a single Segment with less than the required minimum, here is the expected output:
+Note that to run the client in this mode, where a single Segment is used to create an Audience, the Segment must have at least the minimum amount of User IDs required to create an Audience (500). If you attempt to build an Audience with a single Segment with less than the required minimum, here is the expected output:
 
 ```
 Starting build process at 2016-01-28 12:46:10 -0700
@@ -228,7 +228,7 @@ Finished at 2016-01-28 12:46:17 -0700
 
 See the next example work-flow for more details on building Audiences with a set of Segments all with less with the minimum required to build an Audience.
 
-+ **Building an Audience from multiple Segments, all with less than the minimum required to create an Audience.**
++ **Building an Audience from multiple Segments, all with fewer than the minimum required to create an Audience.**
 
 In this example, there are two collections of User IDs, each with 400 User IDs. The usage pattern of building a single Segment from a collection of User IDs and creating an Audience in a single session is not possible since each Segment has less than the required minimum amount of User IDs. Instead, you can first create the Segments, then reference the two Segments when creating the Audience. In the example, we'll combine the last two steps into a single session: build the second Segment, add it and the first Segment to create the new Audience, then query it.  
 
@@ -307,9 +307,9 @@ After creating an Audience, you may decide to add more Segments to it. When addi
 
 + Steps to do this:
     + Configuration details:
-        + Segment name: my_new_segement
+        + Segment name: my_new_segment
         + Audience name: my_existing_audience
-              + + if using command-line, call with parameters: ```-n "my_existing_audience -s "my_new_segement" ```
+              + + if using command-line, call with parameters: ```-n "my_existing_audience -s "my_new_segment" ```
         + outbox: ./outbox
   
     + Run client: ```$ruby audience_app.rb```
@@ -393,7 +393,7 @@ Note: There is an option to [inject Audience metadata](#client-output) into the 
     ```
     $ruby audience_app.rb -l
     ```
-    You should see a listing of Segments and Audiences, which when you are just starting out will be a empty list. 
+    You should see a listing of Segments and Audiences, which when you are just starting out will be an empty list. 
 
 ### Configuring Client <a id="configuring-client" class="tall">&nbsp;</a>
 
@@ -463,7 +463,7 @@ audience_settings:
 For more details on specifying the demographics see the [Audience API documentation](http://support.gnip.com/apis/audience_api/interpreting_insights.html#Definitions).
 
 ```
-audience_groupings: #Three model levels per group are supported. Up to ten Groupings.
+audience_groupings: #Two model levels per group are supported. Up to ten Groupings per audience query.
   country_and_gender:
     group_by:
       - user.location.country
@@ -477,11 +477,6 @@ audience_groupings: #Three model levels per group are supported. Up to ten Group
   tv_show_types:
     group_by:
       - user.tv.genre
-  country_and_region_and_metro:
-    group_by:
-      - user.location.country
-      - user.location.region
-      - user.location.metro
   country_and_region:
     group_by:
        - user.location.country
@@ -550,7 +545,7 @@ Here are some command-line examples to help illustrate how they work:
 
 + Using the default config file names and locations: 
   + Create a Segment named 'new_segment' (overriding any Segment name specified in config file) based on the current 'inbox' files
-  + Add that Segment to an Audience named 'this_audience' and query it. If 'this_audience' already exists, it will be retreived, and updated with the new Segment. Otherwise, a new Audience will be created.
+  + Add that Segment to an Audience named 'this_audience' and query it. If 'this_audience' already exists, it will be retrieved, and updated with the new Segment. Otherwise, a new Audience will be created.
   + Write the results to the 'outbox' as specified in the app_settings.yaml file.
    
   ```$ ruby audience_app.rb -s "new_segment" -n "this_audience"```
@@ -561,7 +556,7 @@ Here are some command-line examples to help illustrate how they work:
 
 ### Client Output <a id="client-output" class="tall">&nbsp;</a>
 
-When the Client queries an Audience, it writes the API response to the 'outbox' folder as configured in the app_settings.yaml file. The output file names are based on the Audience name with '_results.json' appended to it. For example, if you query an Audience named 'my_first_audience' the query results will be written to a 'my_first_audience_results.json' file. If an Audience is repeatedly queried (usually with an updated set of [Audience Groupings](#audience_groupings)), the output file name is numerically serialized. Fore example, if the 'my_first_audience' is queried a second time, the output file is named 'my_first_audience_results_2.json'.
+When the Client queries an Audience, it writes the API response to the 'outbox' folder as configured in the app_settings.yaml file. The output file names are based on the Audience name with '_results.json' appended to it. For example, if you query an Audience named 'my_first_audience' the query results will be written to a 'my_first_audience_results.json' file. If an Audience is repeatedly queried (usually with an updated set of [Audience Groupings](#audience_groupings)), the output file name is numerically serialized. For example, if the 'my_first_audience' is queried a second time, the output file is named 'my_first_audience_results_2.json'.
 
 <a id="add-audience-metadata" class="tall">&nbsp;</a>
 There is an ```add_audience_metadata``` option to inject the Audience metadata into these results. This can help track what Audiences different results were based on. When set to 'true' the current Audience metadata is included in the results JSON under an 'audience' key. These metadata are the result of the [Audience API GET /insights/audience/audiences/:id] (http://support.gnip.com/apis/audience_api/api_reference.html#GetAudiencesID) response.
@@ -626,7 +621,7 @@ There are four Ruby files associated with this client (subject to change due to 
     + Manages configuration files, command-line options and application session logic. Examples of these work session include:
         + Building Segments from collections of User IDs.
         + Having a collection of User IDs, building a Segment and an Audience, and querying that Audience.
-        + Adding a new Segment to and existing Audience.
+        + Adding a new Segment to an existing Audience.
     + Creates one instance of the AudienceClient (audience_client.rb) class. 
     + 
     + Start here if you are adding/changing command-line details. 
@@ -648,7 +643,7 @@ There are four Ruby files associated with this client (subject to change due to 
 
 + /common/insights_utils.rb <a id="insights-utils" class="tall">&nbsp;</a>
     + A 'utilities' helper class with methods common to both Insights APIs, Audience and Engagement.
-    + Where all extacting of IDs happens... Adding a new User IDs file type? Add a method here.
+    + Where all extracting of IDs happens... Adding a new User IDs file type? Add a method here.
     + Code here can be shared with other Insights API clients, such as the Engagement client.
 
 + /common/app_logger.rb <a id="app-logger" class="tall">&nbsp;</a>
