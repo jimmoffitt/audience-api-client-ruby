@@ -203,10 +203,12 @@ end
 AppLogger.log_info("Starting build process at #{Time.now}")
 AppLogger.log_info("Starting Segment management...") if have_segment_name
 
-files_to_ingest = Client.files_to_ingest? #Are there files to process?
+
 continue = true
 
 if Client.segment_build_mode.downcase == 'collection'
+
+   files_to_ingest = Client.files_to_ingest? #Are there files to process?
 
    if files_to_ingest
 

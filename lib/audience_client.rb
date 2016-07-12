@@ -354,6 +354,7 @@ class AudienceClient
 	  if %w(followed engaged impressed).include? @segment_build_mode.downcase
 		 user_ids = []
 		 user_ids << @account_id.to_s
+		 request[@segment_build_mode] = {}
 		 request[@segment_build_mode]['user_ids'] = []
 		 request[@segment_build_mode]['user_ids'] = user_ids
 	  end
@@ -370,9 +371,10 @@ class AudienceClient
 
 	  #Parse response and return audience_id
 	  response = JSON.parse(response)
-
-	  AppLogger.log_info "Created #{name} Segment with ID #{response['id']}."
-
+	  
+	  if !response.include?('errors')
+	  	AppLogger.log_info "Created #{name} Segment with ID #{response['id']}."
+	  end
 	  response
    end
 
