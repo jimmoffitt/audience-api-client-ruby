@@ -435,6 +435,30 @@ Finished at 2016-01-28 15:28:34 -0700
 
 Note: There is an option to [inject Audience metadata](#client-output) into the query results JSON.
 
++ **Deleting Segments and Audiences.**
+
+In time you'll probably want to delete Segments and Audiences. Note that you can delete Segments that an Audience is constructed with without affecting the Audience. 
+ 
+This example client supports deleting Segments and Audiences by name. In this example, we'll delete a Segment named 'my-old-segment' and an Audience named 'my-old-audience'.
+
++ Steps to do this:
+    + Configuration details:
+        + Segment name: my-old-segment
+        + Audience name: my-old-audience
+              + if using command-line, call with parameters: ```-n "my-old-audience" -s "my-old-segment" ```
+ 
+    + Run client: ```$ruby audience_app.rb```
+        + if using command-line, call with parameters: ```-n "my-old-audience" -s "my-old-segment" ```
+ 
+     
+    
+Expected output:
+
+```
+Deleted Segment my-old-segment...
+Deleted Audience my-old-audience...
+```
+
 ## Getting started <a id="getting-started" class="tall">&nbsp;</a>
 
 + Obtain App access to the Audience API from Twitter via Gnip.

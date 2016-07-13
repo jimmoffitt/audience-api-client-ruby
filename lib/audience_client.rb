@@ -527,6 +527,7 @@ class AudienceClient
 
 		 if not audience_id == ''
 			delete_audience_by_id(audience_id)
+			AppLogger.log_info "Deleted Segment #{name}..."
 		 else
 			puts "Audience #{name} not found. No deletion..." if @verbose
 		 end
