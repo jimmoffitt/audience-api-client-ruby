@@ -28,12 +28,13 @@
 
 The Audience API is a service that retrieves aggregate interests and demographic insights for a collection of Twitter users. For information on the Audience API, see our documentation at http://support.gnip.com/apis/audience_api/. 
 
-This example Audience API Client helps automate the creation of Segments and Audiences, and querying Audiences with [custom demographic 'groupings'](#audience-groupings). For example, one key feature of the Client is its ability to extract User IDs from a variety of sources. These sources include Gnip [Full-Archive Search](http://support.gnip.com/apis/search_full_archive_api/), [30-Day Search](http://support.gnip.com/apis/search_api/), or [Historical PowerTrack](http://support.gnip.com/apis/historical_api/) products, the [Twitter Public API](https://dev.twitter.com/rest/reference/get/followers/ids), and simple CSV files.
+This example Audience API Client helps automate the creation of Segments and Audiences, and querying Audiences with [custom demographic 'groupings'](#audience-groupings). By providing Segment and Audience names, along with the numeric User ID of an account of interest, you can build and query an audience with a single run of the client. If you have authorized access, you can do the same with the Twitter users that have engaged or seen Tweets of an account of interest over the previous 90 days. For building Segments with customer user collections, one key feature of the Client is its ability to extract User IDs from a variety of sources. These sources include Gnip [Full-Archive Search](http://support.gnip.com/apis/search_full_archive_api/), [30-Day Search](http://support.gnip.com/apis/search_api/), or [Historical PowerTrack](http://support.gnip.com/apis/historical_api/) products, the [Twitter Public API](https://dev.twitter.com/rest/reference/get/followers/ids), and simple CSV files.
 
 The Audience API requires OAuth authentication and Twitter consumer and access tokens. A first step is getting access to the Audience API and creating a Twitter App used to authenticate. See the [Getting Started](#getting-started) section below for more information. 
 
 The Client's design was driven by some common ['usage patterns'](#example-usage-patterns) employed while creating and querying Audiences. These range from creating multiple user Segments from different collections of User IDs, to repeatedly querying an Audience once it is created. This Client provides a set of helper features for working with the Audience API:
 
++ Provides command-line parameters for easily building Segments based on account followers, engaged users, and impressed users by passing in the numeric User ID.
 + Provides a set of methods for building Segments from a variety of User ID sources.
 + Managing Segments and Audience by name. 
   + The Audience API natively identifies and manages Segment and Audiences with universally-unique IDs (UUID). An example ID is ```132a19a9-4448-4273-9317-69c17b2ae794```.
@@ -45,9 +46,22 @@ The Client's design was driven by some common ['usage patterns'](#example-usage-
 + Provides an option to inject the [Audience metadata](#add-audience-metadata) into query results. This option can help you keep track of what Audiences different results were based on.
 + If making multiple Audience queries based on different [Audience Grouping](#audience-groupings), the results' filenames are serialized.
  
-The API Client has four modes:
+The API Client has several modes:
 
-+ Manage Segments and Audiences, create/update/query (default mode, ```-m``` command-line option).
++ Manage Segments and Audiences.
+
+    Building Segments:
+    
+    + Build Segment based on User ID collection (```-c``` command-line option, or ```segment_build_mode: collection``` config file option, triggers data import from inbox).
+    + Build Segment based on followers of the specified account (```-f numeric_user_id``` command-line option, or ```segment_build_mode: followed``` config file option).
+    
+    These two option required access token permissions for the specified account:
+    
+    + Build Segment based on engaged users of the specified account (```-e numeric_user_id``` command-line option, or ```segment_build_mode: engaged``` config file option).
+    + Build Segment based on impressed users of the specified account (```-i numeric_user_id``` command-line option, or ```segment_build_mode: impressed``` config file options).
+    
+    If Segments are not being built, the client will retrieve the specified Audience (via config file or command-line) and query it.
+        
 + List all defined Segments and Audiences (```-l``` command-line option).
 + Print Audience API usage data (```-u``` command-line option).
 + Delete specified Segments and/or Audience. (```-d``` command-line option).
@@ -58,6 +72,7 @@ As a Gnip customer who is adopting the Audience API:
 
 + I want to automate the generation of Segments and Audiences. 
     + Given a set of Twitter tokens, manages the OAuth process.
+    + Manage building Segments based on the followers of any account. 
     + Manage building Segments with potentially millions of User IDs.
 
 + I have collections of User IDs and want to easily build Audiences based on them. These collections consist of:
@@ -82,6 +97,7 @@ may be comprised of a single Segment, or multiple Segments.
 
 Driven by command-line options, configuration settings, and the availability of input data files, this client helps manage a set of Audience API 'sessions'. Examples of these work sessions include:
 
++ Building Segments based on users that follow, have engaged with, or been impressed by a specified Twitter account.
 + Building Segments from collections of User IDs.
 + Having a collection of User IDs, building a Segment and an Audience, and querying that Audience in a single session.
 + Adding a new Segment to an existing Audience.
@@ -89,10 +105,17 @@ Driven by command-line options, configuration settings, and the availability of 
 
 Three details fundamentally drive the client's execution logic:
 
-+ **Data files in the 'inbox':**
-    + If files are present, this client will attempt to build a Segment with specified name. Client treats all files in the inbox as a single User ID collection to be loaded into a single Segment. When constructing multiple Segments, you will iteratively move data files into the inbox, construct a Segment, repeat. 
++ Options provided for building a Segment:
+    + Build mode can is specified in the app_settings.yaml file and can be overridden with the -c, -f, -e, and -i command-line parameters.
+        + ```-f numeric_user_id``` or ```build_mode: followed```
+        + ```-e numeric_user_id``` or ```build_mode: engaged```
+        + ```-i numeric_user_id``` or ```build_mode: impressed```
+        + ```-c``` or ```build_mode: collection```
+
+When using the ```collection`` build mode, the client will look for files in the 'inbox':
+        + If files are present, this client will attempt to build a Segment with specified name. Client treats all files in the inbox as a single User ID collection to be loaded into a single Segment. When constructing multiple Segments, you will iteratively move data files into the inbox, construct a Segment, repeat. 
         + Once files are parsed they are moved into a (auto-created) '/processed' directory.   
-    + If files are not present, no Segments are created. 
+        + If files are not present, no Segments are created. 
     
 + **Segment name(s):**
     + Segment name is specified in app_settings.yaml file and can be overridden with the -s command-line parameter. 
@@ -118,6 +141,43 @@ The above processing logic is encapsulated in the audience_app.rb script. So, if
 
 ### Example Usage Patterns <a id="example-usage-patterns" class="tall">&nbsp;</a>
  
+
++ **Building Segment based on followers of a specified account, build an Audience with that single Segment, and query the Audience.**
+
+For this example, an Audience will be built and queried based on my @snowman account. Since this account has more than 500 followers, we can build a single Segment based on these followers, create an Audience with that single Segment, and then query that Audience... all in a single run.
+
+Building a Segment based on an account's followers is very straightforward. You need to specify names for the Segment and Audience, provide the numeric account ID for the @snowman account, and set your demographic Groupings of choice. These can all be set in the app_settings.yaml file, and you can also provide the names and User ID via the command-line.
+
++ Steps to do this:
+    + Configuration details:
+        + Segment name: snowman_followers
+        + Audience name: snow_audience
+        + build_mode: followed
+              
+              
+    + Run client: ```$ruby audience_app.rb```
+        + if using command-line, you can alternatively call with parameters: ```-n "snowman_audience" -s "snowman_followers" -f 17200003``` 
+
+    + Confirm Segment exists: ```$ruby audience_app.rb -l```
+
+Expected output:
+
+```  
+Starting build process at 2016-07-13 08:26:30 -0600
+Starting Segment management...
+Created snowman_followed Segment with ID f8114329-83e5-4b01-a5c6-3a9b1e46370a.
+Retrieving Segment(s): snowman_followed
+Starting Audience management...
+Audience snowman_audience does not exist... 
+Have 511 User IDs in Segments.
+Created 'snow_audience' Audience with 1 Segments. Audience ID: 00ac9afa-a0e7-4515-803a-f91bd9668d8e
+Request: {"name":"snowman_audience","segment_ids":["f8114329-83e5-4b01-a5c6-3a9b1e46370a"]}
+Querying Audience...
+Audience metadata:
+<<results here>>
+Finished at 2016-07-13 08:26:52 -0600
+```    
+
 + **Building Segment from a collection of User IDs.**
 
 Building a Segment requires a collection of Twitter User IDs. This Client can parse and extract IDs from several sources such as [Historical PowerTrack](http://support.gnip.com/apis/historical_api/) files, [30-Day](http://support.gnip.com/apis/search_api/) or [Full-Archive Search](http://support.gnip.com/apis/search_full_archive_api/) responses and [Twitter Public API](https://dev.twitter.com/rest/reference/get/followers/ids) responses.
