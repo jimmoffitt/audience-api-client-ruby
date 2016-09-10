@@ -21,8 +21,10 @@ def have_name?(name)
 end
 
 def multiple_segments?(name)
-   if name.include?(',')
-	  return true
+   if not name.nil?
+	  if name.include?(',')
+		 return true
+	  end
    end
    false
 end
@@ -125,7 +127,7 @@ if __FILE__ == $0 #This script code is executed when running this file.
 		 name.strip
 	  end
    else
-	  segment_names << Client.segment_names.strip
+	  segment_names << Client.segment_names.strip if not Client.segment_names.nil?
    end
 
    begin
@@ -146,48 +148,48 @@ if __FILE__ == $0 #This script code is executed when running this file.
 	  end
    rescue
 
-	  
+
    end
 
 
 #---------------------------------------------------------------------------------------
 #Four fundamental modes supported by this simple app:
 # 1) List objects.
-if $list
-   Client.list_segments
-   Client.list_audiences
-   exit
-end
+   if $list
+	  Client.list_segments
+	  Client.list_audiences
+	  exit
+   end
 
 # 2) Get Usage.
-if $usage
-   Client.print_usage
-   exit
-end
+   if $usage
+	  Client.print_usage
+	  exit
+   end
 
-have_segment_name = have_name?(Client.segment_names)
-have_audience_name = have_name?(Client.audience_name)
+   have_segment_name = have_name?(Client.segment_names)
+   have_audience_name = have_name?(Client.audience_name)
 
 #3) Delete objects.
-if $delete and not $force
+   if $delete and not $force
 
-   if have_segment_name
-	  segment_names.each do |segment_name|
-		 Client.delete_segment_by_name(segment_name)
+	  if have_segment_name
+		 segment_names.each do |segment_name|
+			Client.delete_segment_by_name(segment_name)
+		 end
+
+		 #AppLogger.log_info "Deleted Segment #{Client.segment_name}."
+		 Client.list_segments if Client.verbose
 	  end
 
-	  #AppLogger.log_info "Deleted Segment #{Client.segment_name}."
-	  Client.list_segments if Client.verbose
-   end
+	  if have_audience_name
+		 Client.delete_audience_by_name(Client.audience_name)
+		 #AppLogger.log_info "Deleting Audience #{Client.audience_name}."
+		 Client.list_audiences if Client.verbose
+	  end
 
-   if have_audience_name
-	  Client.delete_audience_by_name(Client.audience_name)
-	  #AppLogger.log_info "Deleting Audience #{Client.audience_name}."
-	  Client.list_audiences if Client.verbose
+	  exit
    end
-
-   exit
-end
 
 #There are also other more ambitious delete methods you can force.
 #if $delete and $force
@@ -200,133 +202,133 @@ end
 
 #---------------------------------------------------------------------------------------------------------------------
 #Segment Requests and Management.
-AppLogger.log_info("Starting build process at #{Time.now}")
-AppLogger.log_info("Starting Segment management...") if have_segment_name
+   AppLogger.log_info("Starting build process at #{Time.now}")
+   AppLogger.log_info("Starting Segment management...") if have_segment_name
 
 
-continue = true
+   continue = true
 
-if Client.segment_build_mode.downcase == 'collection'
+   if Client.segment_build_mode.downcase == 'collection'
 
-   files_to_ingest = Client.files_to_ingest? #Are there files to process?
+	  files_to_ingest = Client.files_to_ingest? #Are there files to process?
 
-   if files_to_ingest
+	  if files_to_ingest
 
-	  Client.user_ids = Client.load_ids
+		 Client.user_ids = Client.load_ids
 
-	  if have_segment_name
-		 #With multiple segment names, only the first one created/updated....
-		 AppLogger.log_info "Creating or updating Segment #{segment_names[0]} and adding User IDs..."
-		 segment = Client.update_segment(segment_names[0], Client.user_ids)
-		 if not segment['errors'].nil?
-			AppLogger.log_error "ERROR: Creating or updating Segment failed with error #{segment['error']}. Quitting."
+		 if have_segment_name
+			#With multiple segment names, only the first one created/updated....
+			AppLogger.log_info "Creating or updating Segment #{segment_names[0]} and adding User IDs..."
+			segment = Client.update_segment(segment_names[0], Client.user_ids)
+			if not segment['errors'].nil?
+			   AppLogger.log_error "ERROR: Creating or updating Segment failed with error #{segment['error']}. Quitting."
+			   continue = false
+			end
+		 else
+			AppLogger.log_error "ERROR. Have User IDs to add, but no Segment name provided. Quitting."
 			continue = false
 		 end
 	  else
-		 AppLogger.log_error "ERROR. Have User IDs to add, but no Segment name provided. Quitting."
-		 continue = false
+		 AppLogger.log_info "No new User IDs to process..."
 	  end
-   else
-	  AppLogger.log_info "No new User IDs to process..."
+   elsif %w(followed engaged impressed tailored).include? Client.segment_build_mode.downcase
+	  Client.create_segment(segment_names[0])
    end
-elsif %w(followed engaged impressed tailored).include? Client.segment_build_mode.downcase
-   Client.create_segment(segment_names[0])
-end
 
-if continue and have_segment_name and have_audience_name
+   if continue and have_segment_name and have_audience_name
 
-   AppLogger.log_info "Retrieving Segment(s): #{Client.segment_names}"
-   segments = []
+	  AppLogger.log_info "Retrieving Segment(s): #{Client.segment_names}"
+	  segments = []
 
-   segment_names.each do |segment_name|
-	  segment = Client.get_segment_by_name(segment_name)
+	  segment_names.each do |segment_name|
+		 segment = Client.get_segment_by_name(segment_name)
 
-	  if segment.include? "does not exist"
-		 AppLogger.log_warn "Specified Segment #{segment_name} does not exist... Skipping it..."
-	  else
-		 segments << segment
+		 if segment.include? "does not exist"
+			AppLogger.log_warn "Specified Segment #{segment_name} does not exist... Skipping it..."
+		 else
+			segments << segment
+		 end
 	  end
    end
-end
 
 #Audience Requests and Management.
 
 #Retrieve or Build Audience.
-if continue and have_audience_name
-   AppLogger.log_info("Starting Audience management...")
+   if continue and have_audience_name
+	  AppLogger.log_info("Starting Audience management...")
 
-   audience = Client.get_audience_by_name(Client.audience_name)
+	  audience = Client.get_audience_by_name(Client.audience_name)
 
-   if audience['id'].nil?
-	  AppLogger.log_warn "Audience #{Client.audience_name} does not exist... "
+	  if audience['id'].nil?
+		 AppLogger.log_warn "Audience #{Client.audience_name} does not exist... "
 
-	  if segments.count == 0
-		 AppLogger.log_error "Attempting to create Audience #{Client.audience_name} but no Segments to build Audience with, quitting."
-		 continue = false
-	  else
+		 if segments.count == 0
+			AppLogger.log_error "Attempting to create Audience #{Client.audience_name} but no Segments to build Audience with, quitting."
+			continue = false
+		 else
 
-		 continue = Client.can_create_audience?(segments)
+			continue = Client.can_create_audience?(segments)
 
-		 unless continue == false
-			segment_ids = []
+			unless continue == false
+			   segment_ids = []
 
-			segments.each do |segment|
-			   segment_ids << segment['id']
-			end
+			   segments.each do |segment|
+				  segment_ids << segment['id']
+			   end
 
-			audience = Client.create_audience(Client.audience_name, segment_ids)
+			   audience = Client.create_audience(Client.audience_name, segment_ids)
 
-			if not audience['errors'].nil?
-			   AppLogger.log_error "Error occurred creating Audience: #{audience}"
-			   continue = false
+			   if not audience['errors'].nil?
+				  AppLogger.log_error "Error occurred creating Audience: #{audience}"
+				  continue = false
+			   end
 			end
 		 end
 	  end
    end
-end
 
 #Add Segment to Audience?
-if continue and have_audience_name
-   if not segments.nil?
-	  #If Audience does not refer to this Segment, add Segment to Audience
+   if continue and have_audience_name
+	  if not segments.nil?
+		 #If Audience does not refer to this Segment, add Segment to Audience
 
-	  segments.each do |segment|
-		 segment_in_audience = false
+		 segments.each do |segment|
+			segment_in_audience = false
 
 
-		 audience['segment_ids'].each do |existing_segment_id|
-			if existing_segment_id == segment['id']
-			   segment_in_audience = true
+			audience['segment_ids'].each do |existing_segment_id|
+			   if existing_segment_id == segment['id']
+				  segment_in_audience = true
+			   end
+			end
+
+			if not segment_in_audience #append Segment to Audience's array of Segments.
+			   #Audiences only have create and delete methods, there is no update.
+			   #Steps: clone audience, update segment array, delete original, create new with clone
+			   AppLogger.log_info "Adding Segment to Audience."
+			   audience_update = audience
+			   audience_update['segment_ids'] << segment['id']
+			   Client.delete_audience_by_name(Client.audience_name)
+			   Client.create_audience(Client.audience_name, audience_update['segment_ids'])
+			   audience = Client.get_audience_by_name(Client.audience_name)
 			end
 		 end
-
-		 if not segment_in_audience #append Segment to Audience's array of Segments.
-			#Audiences only have create and delete methods, there is no update.
-			#Steps: clone audience, update segment array, delete original, create new with clone
-			AppLogger.log_info "Adding Segment to Audience."
-			audience_update = audience
-			audience_update['segment_ids'] << segment['id']
-			Client.delete_audience_by_name(Client.audience_name)
-			Client.create_audience(Client.audience_name, audience_update['segment_ids'])
-			audience = Client.get_audience_by_name(Client.audience_name)
-		 end
+	  else
+		 AppLogger.log_error "No Segments to add to Audience."
 	  end
    else
-	  AppLogger.log_error "No Segments to add to Audience."
+	  AppLogger.log_info "No Audience to query, no more work to do..."
+	  continue = false
    end
-else
-   AppLogger.log_info "No Audience to query, no more work to do..."
-   continue = false
-end
 
 #Query Audience
-if continue
-   AppLogger.log_info "Querying Audience..."
-   Client.print_results(Client.query_audience(audience['id'])) unless Client.groupings.nil?
-end
+   if continue
+	  AppLogger.log_info "Querying Audience..."
+	  Client.print_results(Client.query_audience(audience['id'])) unless Client.groupings.nil?
+   end
 
 #------------------------------------------------------------------
-AppLogger.log_info("Finished at #{Time.now}")
+   AppLogger.log_info("Finished at #{Time.now}")
 
 end
 
