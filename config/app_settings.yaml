@@ -27,7 +27,7 @@ audience_groupings: #Two model levels per group are supported. Up to ten Groupin
   interests:
     group_by:
       - user.interest
- country_interest:
+  country_interest:
     group_by:
       - user.location.country
       - user.interest
