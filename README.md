@@ -1,6 +1,9 @@
 # audience-api-client-ruby
 ## An example Audience API client written in Ruby. 
 
+## Note: legacy code kept around as example code for future Twitter Insights APIs.
+## No longer available @TwitterDev github.
+
 + [Introduction](#introduction)
   + [Overview](#overview)
   + [User-story](#user-story)
